@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>注册</title>
+  <!-- 导入jquery -->
+  <script src="./libs/jquery-1.12.4.min.js"></script>
+  <!-- 导入bootstrap -->
+  <link rel="stylesheet" href="./libs/bootstrap/css/bootstrap.min.css">
+  <script src="./libs/bootstrap/js/bootstrap.min.js"></script>
+  <!-- 导入art-template -->
+  <script src="./libs/template-web.js"></script>
+  <!-- 导入md5 -->
+  <script src="./libs/md5.min.js"></script>
+  <style>
+    /* 把登录框往下压 */
+    .my-panel {
+      margin-top: 200px;
+    }
+    body{
+      background: url("../static/images/bg3.jfif") no-repeat fixed center;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- bootstrap的容器  带版心的-->
+  <div class="container">
+    <!-- 栅格的行 -->
+    <div class="row">
+      <!-- 栅格的列 offset 列偏移 -->
+      <div class="col-xs-6 col-xs-offset-3">
+        <!-- 面板 -->
+        <div class="panel panel-default panel-primary my-panel">
+          <!-- 面板的标题 -->
+          <div class="panel-heading">
+            <h3 class="panel-title">登录CQ管理系统</h3>
+          </div>
+          <!-- 面板的内容 -->
+          <div class="panel-body">
+            <!-- 表单 -->
+            <form class="form-horizontal" id="form">
+              <div class="form-group">
+                <label for="userName" class="col-sm-2 control-label">用户名</label>
+                <div class="col-sm-10">
+                  <input type="text" name="username" class="form-control" id="username" placeholder="王**">
+                  <p id="check" style="font-size: 15px;height: 20px;line-height: 40px;display: none;">请在上方输入注册的用户名</p>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="passWord" class="col-sm-2 control-label">密&nbsp;&nbsp;&nbsp;&nbsp;码</label>
+                <div class="col-sm-10">
+                  <input type="password" name="password" class="form-control" id="password" placeholder="密码">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="code" class="col-sm-2 control-label">验证码</label>
+                <div class="col-sm-6">
+                  <input type="text" name="code" class="form-control" id="code" placeholder="验证码">
+                </div>
+                <div class="col-sm-4">
+                  <img class="code" src="http://127.0.0.1:4399/captcha" alt="">
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                  <input type="submit" class="btn btn-danger" id="register" value="注册">
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+  <script>
+    $(function(){
+      //点击验证码图片,发起验证码申请请求
+      $(".code").on("click",function(){
+        $(this).attr("src",`http://127.0.0.1:4399/captcha?id=${Math.random()}`);
+        $(this).css("cursor","pointer")
+      });
+      //当用户名输入框失去焦点时,提前验证该用户名是否被注册
+      $("#username").blur(function(){
+        console.log(1);
+        //发起用户名检验
+        $.ajax({
+          type:"get",
+          url:"http://127.0.0.1:4399/username",
+          data:{
+            username:$("#username").val().trim()
+          },
+          success:function(res){
+            console.log(res)
+            if(res.code==500){
+              // alert("该用户名已被注册,请使用其他用户名");
+              $("#check").text("该用户名已被注册,请使用其他用户名").css("color","red").slideDown()
+              $("#username").css("border","2px red solid")
+            }else if(res.code ==200){
+              $("#check").css("color","green").text("该用户名可以使用")
+              $("#username").css("border","2px green solid")
+            }
+          }
+        })
+      })
+      //点击注册按钮
+      $("#register").on("click",function(e){
+        e.preventDefault();
+        // console.log(1)
+        let md5String = md5($('#password').val(), 'add salt');
+        $('#password').val(md5String);
+        //获取表单内所有值
+        let fm = $("form")[0];
+        let fd = new FormData(fm);
+        console.log(fd.get("code"));
+        //发起注册请求
+        $.ajax({
+          type:"post",
+          url:"http://127.0.0.1:4399/register",
+          data:fd,
+          contentType:false,
+          processData:false,
+          success:function(res){
+          if(res.code==400){
+            alert("已存在该用户名,请输入其他用户名");
+            console.log(res);
+          }else if(res.code==500){
+            alert("验证码有误,请重新输入");
+          }else if(res.code==200){
+            alert("注册成功");
+            window.location.href = "./login.html";
+          }
+          }
+        })
+      })
+    })
+
+
+  </script>
+</html>
