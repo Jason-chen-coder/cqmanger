@@ -13,6 +13,7 @@
   <script src="./libs/bootstrap/js/bootstrap.min.js"></script>
   <!-- 导入art-template -->
   <script src="./libs/template-web.js"></script>
+  <script src="./libs/islogin.js"></script>
   <!-- <style>
     body{
       background: url("../static/images/bg3.jfif") no-repeat fixed center;
@@ -34,7 +35,7 @@
           <ul class="nav navbar-nav navbar-right">
             <li><a href="#" id="username">张三</a></li>
             <li><button class="btn btn-danger btn-exit" id="logout"
-                onclick="location.href='http://127.0.0.1:3000/logout'">退出</button></li>
+                >退出</button></li>
             <li><button class="btn btn-success" id="login" onclick="location.href='./login.html'">请登录</button></li>
           </ul>
         </div>
@@ -86,7 +87,7 @@
               <tbody id="heroListBody">
                 <td> 小可爱 </td>
                 <td> 渣女大波浪 </td>
-                <td><img src="./images/ml03.png" width="72px" height="72px"></td>
+                <td><img src="/bg3.jfif" width="72px" height="72px"></td>
                 <td class="manager">
                   <button class="btn btn-success" onclick="location.href='./update.html'">编辑🐷</button>
                   <button class="btn btn-danger">删除👍</button>
@@ -121,7 +122,7 @@
     //点击查询按钮,进行ajax查询
     $("#searchBtn").on("click", function (e) {
       e.preventDefault();
-      console.log($("#search").val().trim())
+      // console.log($("#search").val().trim())
       $.ajax({
         url: "http://127.0.0.1:4399/hero/list",
         data: {
@@ -164,6 +165,24 @@
           }
         }
       });
+      }
+    })
+  
+    //点击退出按钮
+    $("#logout").on("click",function(e){
+      e.preventDefault();
+      //发起loginout请求
+      if(confirm("确定要退出吗?")){
+        $.ajax({
+        type:"get",
+        url:"http://127.0.0.1:4399/loginout",
+        success:function(res){
+          if(res.code==200){
+            alert("退出成功");
+            window.location.href="./login.html";
+          }
+        }
+      })
       }
     })
   </script>

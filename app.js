@@ -5,6 +5,7 @@ const hm = require("mysql-ithm");
 const bodyparser = require("body-parser");
 const cors = require("cors");
 const svgCaptcha = require('svg-captcha');
+const cookieSeesion = require("cookie-session");
 //1.创建服务器
 const app = express();
 
@@ -18,6 +19,13 @@ app.use(express.static("uploads"));
 app.use(bodyparser.urlencoded({ extended: false }));
 //2.4配置跨域cors
 app.use(cors());
+//2.5配置cookie-session
+app.use(cookieSeesion({
+    name: "session",
+    keys: ["add salt"],
+    maxAge: 7 * 24 * 60 * 60 * 1000//一周的时间
+}))
+
 //3.数据库配置
 //3.1连接数据库
 //如果数据库存在则连接，不存在则会自动创建数据库
@@ -44,9 +52,9 @@ let userModel = hm.model('userlist', {
 
 //4.写接口
 //4.1查询英雄列表
-    app.get("/hero/list", (req, res) => {
+app.get("/hero/list", (req, res) => {
     let { search } = req.query;
-    console.log(search)
+    // console.log(search)
     // res.send(search); 
     //判断过来的参数是否为空
     if (search == "") {
@@ -54,13 +62,13 @@ let userModel = hm.model('userlist', {
         heroModel.find(`isdelete="false"`, (err, results) => {
             if (err == null) {
                 res.send({
-                    msg: "请求成功",
+                    msg: "请求成功1",
                     code: 200,
                     hero: results
                 })
             } else {
                 res.send({
-                    msg: "请求失败",
+                    msg: "请求失败1",
                     code: 404,
                 })
                 console.log(err);
@@ -72,57 +80,53 @@ let userModel = hm.model('userlist', {
         heroModel.find(`name like "%${search}%" and isdelete="false"`, (err, results) => {
             if (err == null) {
                 res.send({
-                    msg: "请求成功",
+                    msg: "请求成功2",
                     code: 200,
                     hero: results
                 })
             } else {
                 res.send({
-                    msg: "请求失败",
+                    msg: "请求失败2",
                     code: 404,
                 })
                 console.log(err);
             }
         });
     }
-    })
-    //4.2查询英雄详情
-    app.get("/hero/info", (req, res) => {
-
-    })
-    //4.3编辑英雄
-    app.post("/hero/update", upload.single("icon"), (req, res) => {
+})
+//4.3编辑英雄
+app.post("/hero/update", upload.single("icon"), (req, res) => {
     let id = req.body.id;
-    let obj =req.body;
+    let obj = req.body;
     //判断前端是否有传文件过来,如果没有文件过来那req.file是undefined,拿只需要修改技能和名字
-    if(req.file !=undefined){
+    if (req.file != undefined) {
         obj.icon = "http://127.0.0.1:4399/" + req.file.filename
     }
-        //3.3 修改数据库中的数据 
-        heroModel.update(`id=${id}`, obj, (err, results) => {
-            if (!err) {
-                console.log('修改成功')
-                res.send({
-                    msg: "修改成功",
-                    code: 200,
-                })
-            } else {
-                console.log("修改失败");
-                console.log("err");
-                res.send({
-                    msg: "修改失败",
-                    code: 404,
-                })
-            }
-        });
-    })
-    //4.4删除英雄
-    app.post("/hero/delete", (req, res) => {
+    //3.3 修改数据库中的数据 
+    heroModel.update(`id=${id}`, obj, (err, results) => {
+        if (!err) {
+            console.log('修改成功')
+            res.send({
+                msg: "修改成功",
+                code: 200,
+            })
+        } else {
+            console.log("修改失败");
+            console.log("err");
+            res.send({
+                msg: "修改失败",
+                code: 404,
+            })
+        }
+    });
+})
+//4.4删除英雄
+app.post("/hero/delete", (req, res) => {
     console.log(req.body);
-    let delete_id =req.body.id;
+    let delete_id = req.body.id;
     //软删除(修改数据库中的isdelete)
     //3.2 将数据库中 id = 1 的数据，isdelete修改为false
-    heroModel.update(`id=${delete_id}`,{isdelete:"true"},(err,results)=>{
+    heroModel.update(`id=${delete_id}`, { isdelete: "true" }, (err, results) => {
         if (!err) {
             console.log('删除成功')
             res.send({
@@ -137,11 +141,11 @@ let userModel = hm.model('userlist', {
                 code: 404,
             })
         }
-    console.log(results);
-});
-    })
-    //4.5根据id查询英雄详情
-    app.get("/hero/infoid", (req, res) => {
+        console.log(results);
+    });
+})
+//4.5根据id查询英雄详情
+app.get("/hero/infoid", (req, res) => {
     console.log(1);
     console.log(req.query);
     // 获取参数里的id名
@@ -163,9 +167,9 @@ let userModel = hm.model('userlist', {
             console.log(err);
         }
     });
-    })
-    //4.6增加英雄
-    app.post("/hero/add", upload.single("icon"), (req, res) => {
+})
+//4.6增加英雄
+app.post("/hero/add", upload.single("icon"), (req, res) => {
     heroModel.insert({
         name: req.body.name,
         skill: req.body.skill,
@@ -188,104 +192,133 @@ let userModel = hm.model('userlist', {
         }
     });
 
-    })
-    //4.7验证码接口
-    let captchaText = "";
-    app.get('/captcha', function (req, res) {
-        var captcha = svgCaptcha.create();
-        // console.log(captcha)//里面是插件生成的数据对象;text为验证码文本,data为验证码图片
-        captchaText = captcha.text;
-        res.type('svg');0
-        res.status(200).send(captcha.data);
-    });
-    //4.8注册接口
-    app.post("/register",upload.single("icon"),(req,res)=>{
-        console.log(captchaText);
-        let {username,password,code} = req.body;
-        console.log(req.body);
-        // 验证码判断
-        if(code.toLowerCase()==captchaText.toLowerCase()){
-            //验证码正确,下一步验证数据库中是否有相同账号;
-            userModel.find(`name="${username}"`,(err,results)=>{
-                // console.log(results);
-                // console.log(results=="");
-                if(results==""){
-                    //数据库内没有改账号,可以进行注册,向数据库中添加该账号密码
-                    userModel.insert({name:username,password:password},(err,results)=>{
-                        if(!err) {
-                            console.log('增加成功');
-                            res.send({
-                                msg:"注册成功",
-                                code:200
-                            })
-                        }else{
-                            console.log(err);
-                            res.send({
-                                msg:"注册失败",
-                                code:404
-                            })
-                        };
-                    });
-                }else{
-                    res.send({
-                        msg:'已存在该用户名',
-                        code:400
-                    });
-                }
-            });
-        }else{
+})
+//4.7验证码接口
+let captchaText = "";
+app.get('/captcha', function (req, res) {
+    var captcha = svgCaptcha.create();
+    // console.log(captcha)//里面是插件生成的数据对象;text为验证码文本,data为验证码图片
+    captchaText = captcha.text;
+    res.type('svg'); 0
+    res.status(200).send(captcha.data);
+});
+//4.8注册接口
+app.post("/register", upload.single("icon"), (req, res) => {
+    console.log(captchaText);
+    let { username, password, code } = req.body;
+    console.log(req.body);
+    // 验证码判断
+    if (code.toLowerCase() == captchaText.toLowerCase()) {
+        //验证码正确,下一步验证数据库中是否有相同账号;
+        userModel.find(`name="${username}"`, (err, results) => {
+            // console.log(results);
+            // console.log(results=="");
+            if (results == "") {
+                //数据库内没有改账号,可以进行注册,向数据库中添加该账号密码
+                userModel.insert({ name: username, password: password }, (err, results) => {
+                    if (!err) {
+                        console.log('增加成功');
+                        res.send({
+                            msg: "注册成功",
+                            code: 200
+                        })
+                    } else {
+                        console.log(err);
+                        res.send({
+                            msg: "注册失败",
+                            code: 404
+                        })
+                    };
+                });
+            } else {
+                res.send({
+                    msg: '已存在该用户名',
+                    code: 400
+                });
+            }
+        });
+    } else {
+        res.send({
+            msg: "验证码有误",
+            code: 500
+        })
+    }
+})
+//4.9登录接口
+app.post("/login", upload.single("icon"), (req, res) => {
+    console.log(req.body)
+    //验证账号密码
+    userModel.find(`name="${req.body.username}" and password="${req.body.password}"`, (err, results) => {
+        console.log(err);
+        console.log(results);
+        var username = req.body.username;
+        var password = req.body.password;
+        if (results.length == 0) {
             res.send({
-                msg:"验证码有误",
-                code:500
+                msg: "登陆失败,账号或密码错误",
+                code: 404
+            });
+        } else {
+            req.session.user = {username,password};
+            // res.writeHead(200,{
+            //     "Content-Type":"text/plain;charset=utf-8",
+            //     "Set-Cookie":"userid=123456"
+            // })
+            res.send({
+                msg: "登陆成功",
+                code: 200,
+                data: req.session.user
+            })
+        }
+    });
+})
+//4.10用户名验证接口
+app.get("/username", (req, res) => {
+    // res.send(req.query.username)//
+    userModel.find(`name="${req.query.username}"`, (err, results) => {
+        if (err == null) {
+            if (results.length == 0) {
+                res.send({
+                    msg: "该用户名可用",
+                    code: 200
+                })
+            } else {
+                res.send({
+                    msg: "该用户名已被注册",
+                    code: 404
+                })
+            }
+        } else {
+            res.send({
+                msg: "服务器内部错误",
+                code: 500
             })
         }
     })
-    //4.9登录接口
-    app.post("/login",upload.single("icon"),(req,res)=>{
-        // res.send(req.body)//
-        //验证账号密码
-        userModel.find(`name="${req.body.username}" and password="${req.body.password}"`,(err,results)=>{
-            // console.log(results);
-            console.log(err)
-            console.log(results.length);
-            if(results.length==0){
-                res.send({
-                    msg:"登陆失败,账号或密码错误",
-                    code:404
-                });
-            }else{
-                res.send({
-                    msg:"登陆成功",
-                    code:200
-                })
-            }
-            
-
+})
+//4.11输出cookie接口
+app.get("/islogin",(req,res)=>{
+    if(req.session.user!=null){
+        res.send({
+            msg:"获取成功",
+            data: req.session.user,
+            code:200
         });
-    })
-    //4.10用户名验证接口
-    app.get("/username",(req,res)=>{
-        // res.send(req.query.username)//
-        userModel.find(`name="${req.query.username}"`,(err,results)=>{
-            if(err==null){
-                if(results.length==0){
-                    res.send({
-                        msg:"该用户名可用",
-                        code:200
-                    })
-                }else{
-                    res.send({
-                        msg:"该用户名已被注册",
-                        code:404
-                    })
-                }
-            }else{
-                res.send({
-                    msg:"服务器内部错误",
-                    code:500
-                })
-            }
+    }else{
+        res.send({
+            msg:"获取失败",
+            data:"没有cookie,没有登录过",
+            code:404
+        });
+    }
+})
+//4.12退出登录接口
+app.get("/loginout",(req,res)=>{
+    req.session =null;
+        res.send({
+            msg:"cookie已清除",
+            code:200
         })
-    })
+})
 //5.启动服务器
 app.listen(4399, () => console.log("服务器启动成功"))

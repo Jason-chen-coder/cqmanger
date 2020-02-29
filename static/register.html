@@ -110,9 +110,7 @@
       //点击注册按钮
       $("#register").on("click",function(e){
         e.preventDefault();
-        // console.log(1)
-        let md5String = md5($('#password').val(), 'add salt');
-        $('#password').val(md5String);
+        $('#password').val(md5($('#password').val(), 'add salt'));
         //获取表单内所有值
         let fm = $("form")[0];
         let fd = new FormData(fm);

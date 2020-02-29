@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-cn">
-
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -26,7 +25,7 @@
       width: 200px;
     }
     body{
-      background: url("../static/images/bg3.jfif") no-repeat fixed center;
+      background: url("/bg3.jfif") no-repeat fixed center;
     }
   </style>
 </head>
@@ -73,12 +72,12 @@
   </div>
   </body>
     <script>
-      console.log(md5("123456", 'add salt'))
+      // console.log(md5("123456", 'add salt'))
       //点击登录按钮
       $(".btn-login").on("click",function(e){
         e.preventDefault();
-        let md5String = md5($('#password').val(), 'add salt');
-        $('#password').val(md5String);
+        $('#password').val(md5($('#password').val(), 'add salt'));
+        console.log( $('#password').val());
         let fm =$("form")[0];
         let fd =new FormData(fm);
         //发送登录请求
@@ -91,9 +90,10 @@
           success:function(res){
             if(res.code ==200){
               alert("登陆成功");
+              console.log(res)
               window.location.href="./index.html"
             }else{
-              alert(res.msg);
+              // alert(res.msg);
             }
           }
         })
